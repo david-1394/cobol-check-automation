@@ -17,6 +17,16 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
 
+    # --- EZ A KÉT LÉPÉS HIÁNYZIK A DOKUMENTUMBÓL: ---
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Zowe CLI
+      run: npm install -g @zowe/cli@ignore-exact
+    # -----------------------------------------------
+
     - name: Setup Mainframe Environment and Upload COBOL Check
       env:
         ZOWE_USERNAME: ${{ secrets.ZOWE_USERNAME }}
