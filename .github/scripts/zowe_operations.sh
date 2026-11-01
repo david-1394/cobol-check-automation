@@ -3,15 +3,15 @@
 
 set -e
 
-# 1. CI környezet és automatikus válaszok beállítása
+# Interaktív mód és telemetria tiltása
 export CI=true
 export ZOWE_DISABLE_TELEMETRY=true
 
-echo "Zowe automatikus konfiguráció inicializálása..."
-# Automatikus alapbeállítások létrehozása
-zowe config auto-init || true
+echo "Zowe projekt konfiguráció inicializálása..."
+# Létrehozzuk a globális konfigurációt
+zowe config init --global-config --force || true
 
-# Beállítjuk a csatlakozási adatokat a global konfigurációban
+# Beállítjuk a profil tulajdonságait
 zowe config set "profiles.zosmf.properties.host" "204.90.115.200"
 zowe config set "profiles.zosmf.properties.port" 10443
 zowe config set "profiles.zosmf.properties.user" "$ZOWE_USERNAME"
