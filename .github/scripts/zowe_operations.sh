@@ -1,46 +1,48 @@
 #!/bin/bash
-# zowe_operations.sh
+# mainframe_operations.sh
 
 set -e
 
-# Interaktív mód és telemetria tiltása
-export CI=true
-export ZOWE_DISABLE_TELEMETRY=true
-
-echo "Zowe projekt konfiguráció inicializálása..."
-zowe config init --global-config || true
-
-# Profil beállítások
-zowe config set "profiles.zosmf.properties.host" "204.90.115.200"
-zowe config set "profiles.zosmf.properties.port" 10443
-zowe config set "profiles.zosmf.properties.user" "$ZOWE_USERNAME"
-zowe config set "profiles.zosmf.properties.password" "$ZOWE_PASSWORD"
-zowe config set "profiles.zosmf.properties.rejectUnauthorized" false
-zowe config set "defaults.zosmf" "zosmf"
+echo "=== 1. Helyi fájlok és jogosultságok ellenőrzése ==="
+# A repóban lévő mappa neve kötőjellel van: cobol-check
+if [ -d "cobol-check" ]; then
+  cd cobol-check
+  chmod +x cobolcheck || true
+  if [ -d "scripts" ]; then
+    chmod +x scripts/* || true
+  fi
+  cd ..
+fi
 
 LOWERCASE_USERNAME=$(echo "$ZOWE_USERNAME" | tr '[:upper:]' '[:lower:]')
 REMOTE_DIR="/z/$LOWERCASE_USERNAME/cobolcheck"
 
-echo "Mappa ellenőrzése..."
-if ! zowe zos-files list uss-files "$REMOTE_DIR" &>/dev/null; then
-  echo "A mappa nem létezik, létrehozás..."
-  zowe zos-files create uss-directory "$REMOTE_DIR"
-  zowe zos-files create uss-directory "$REMOTE_DIR/bin" || true
-  zowe zos-files create uss-directory "$REMOTE_DIR/scripts" || true
-else
-  echo "A mappa már létezik."
-fi
+echo "=== 2. COBOL Check futtatása a mainframe USS környezetében ==="
 
-echo "Fájlok feltöltése..."
-# 1. A rekurzív könyvtárstruktúra feltöltése
-zowe zos-files upload dir-to-uss "./cobol-check" "$REMOTE_DIR" --recursive || true
+run_cobolcheck() {
+  program=$1
+  echo "--- COBOL Check futtatása a(z) $program programra ---"
 
-# 2. A JAR fájl kényszerített BINÁRIS feltöltése (X-IBM-Data-Type: binary)
-JAR_FILE=$(find ./cobol-check -name "*.jar" | head -n 1)
-if [ -n "$JAR_FILE" ]; then
-  echo "JAR fájl feltöltése bináris módban: $JAR_FILE"
-  zowe zos-files upload file-to-uss "$JAR_FILE" "$REMOTE_DIR/bin/cobol-check-0.2.19.jar" --binary
-fi
+  # SSH / Zowe parancs futtatása a mainframe USS-en
+  # Belépünk a USS-en lévő mappába és lefuttatjuk a cobolcheck-et
+  zowe zos-uss issue command "cd $REMOTE_DIR && ./cobolcheck -p $program" || true
 
-echo "Feltöltés ellenőrzése:"
-zowe zos-files list uss-files "$REMOTE_DIR"
+  # Ellenőrizzük, hogy létrejött-e a CC##99.CBL a mainframe-en
+  echo "CC##99.CBL másolása az MVS datasetbe..."
+  zowe zos-files copy uss-file "$REMOTE_DIR/CC##99.CBL" "'$ZOWE_USERNAME.CBL($program)'" --overwrite || echo "CC##99.CBL nem található vagy nem sikerült a másolás."
+
+  # JCL fájl másolása az MVS datasetbe (ha létezik a gyökérben)
+  if [ -f "${program}.JCL" ]; then
+    echo "${program}.JCL feltöltése az MVS-re..."
+    zowe zos-files upload file-to-data-set "${program}.JCL" "$ZOWE_USERNAME.JCL($program)" --overwrite
+  else
+    echo "${program}.JCL nem található a projekt gyökerében."
+  fi
+}
+
+# Lefuttatjuk a programokra
+for program in NUMBERS EMPPAY DEPTPAY; do
+  run_cobolcheck $program
+done
+
+echo "=== Mainframe műveletek befejeződtek ==="
