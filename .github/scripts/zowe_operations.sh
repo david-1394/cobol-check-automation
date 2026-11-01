@@ -1,6 +1,10 @@
 #!/bin/bash
 # zowe_operations.sh
 
+set -e
+export CI=true
+export ZOWE_DISABLE_TELEMETRY=true
+
 # Convert username to lowercase
 LOWERCASE_USERNAME=$(echo "$ZOWE_USERNAME" | tr '[:upper:]' '[:lower:]')
 
