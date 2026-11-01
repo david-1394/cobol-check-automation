@@ -7,15 +7,15 @@ set -e
 export CI=true
 export ZOWE_DISABLE_TELEMETRY=true
 
-echo "Zowe csapat-konfiguráció inicializálása..."
-# Létrehozzuk az alapértelmezett zowe.config.json fájlt
-zowe config init --global-config --non-interactive || true
+echo "Zowe automatikus konfiguráció inicializálása..."
+# Automatikus alapbeállítások létrehozása
+zowe config auto-init || true
 
 # Beállítjuk a csatlakozási adatokat a global konfigurációban
 zowe config set "profiles.zosmf.properties.host" "204.90.115.200"
 zowe config set "profiles.zosmf.properties.port" 10443
-zowe config set "profiles.zosmf.properties.rejectUnauthorized" false
 zowe config set "profiles.zosmf.properties.user" "$ZOWE_USERNAME"
+zowe config set "profiles.zosmf.properties.password" "$ZOWE_PASSWORD"
 zowe config set "profiles.zosmf.properties.rejectUnauthorized" false
 zowe config set "defaults.zosmf" "zosmf"
 
