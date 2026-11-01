@@ -3,27 +3,26 @@
 
 set -e
 
-# 1. Telemetria es interaktiv kerdesek kikapcsolasa
+# 1. CI környezet és automatikus válaszok beállítása
 export CI=true
 export ZOWE_DISABLE_TELEMETRY=true
 
-# 2. Zowe zOSMF profil letrehozasa az uj (V2/V3) szintaxissal
-echo "Zowe profil letrehozasa..."
-zowe profiles create zosmf-profile ibmteam \
-  --host "204.90.115.200" \
-  --port 10443 \
-  --user "$ZOWE_USERNAME" \
-  --pass "$ZOWE_PASSWORD" \
-  --reject-unauthorized false \
-  --overwrite || true
+echo "Zowe csapat-konfiguráció inicializálása..."
+# Létrehozzuk az alapértelmezett zowe.config.json fájlt
+zowe config init --global-config --non-interactive || true
 
-# HA a fenti parancs lefutott, kenyszeritsuk a projekt-konfiguracio letrehozasat:
-zowe config init --force || true
+# Beállítjuk a csatlakozási adatokat a global konfigurációban
+zowe config set "profiles.zosmf.properties.host" "204.90.115.200"
+zowe config set "profiles.zosmf.properties.port" 10443
+zowe config set "profiles.zosmf.properties.rejectUnauthorized" false
+zowe config set "profiles.zosmf.properties.user" "$ZOWE_USERNAME"
+zowe config set "profiles.zosmf.properties.rejectUnauthorized" false
+zowe config set "defaults.zosmf" "zosmf"
 
-# 3. Mappa ellenorzes es feltoltes
+# Mappa ellenőrzése és feltöltés
 LOWERCASE_USERNAME=$(echo "$ZOWE_USERNAME" | tr '[:upper:]' '[:lower:]')
 
-echo "Mappa ellenorze..."
+echo "Mappa ellenőrzése..."
 if ! zowe zos-files list uss-files "/z/$LOWERCASE_USERNAME/cobolcheck" &>/dev/null; then
   echo "A mappa nem létezik, létrehozás..."
   zowe zos-files create uss-directory "/z/$LOWERCASE_USERNAME/cobolcheck"
