@@ -1,15 +1,6 @@
 #!/bin/bash
 # zowe_operations.sh
 
-# 1. Zowe z/OSMF profil létrehozása az oktatási mainframe-hez
-zowe profiles create zosmf-profile ibmteam \
-  --host 204.90.115.200 \
-  --port 10443 \
-  --user "$ZOWE_USERNAME" \
-  --pass "$ZOWE_PASSWORD" \
-  --ru false \
-  --overwrite
-
 # Convert username to lowercase
 LOWERCASE_USERNAME=$(echo "$ZOWE_USERNAME" | tr '[:upper:]' '[:lower:]')
 
