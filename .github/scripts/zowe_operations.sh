@@ -8,8 +8,7 @@ export CI=true
 export ZOWE_DISABLE_TELEMETRY=true
 
 echo "Zowe projekt konfiguráció inicializálása..."
-# Létrehozzuk a globális konfigurációt
-zowe config init --global-config --force || true
+zowe config init --global-config || true
 
 # Beállítjuk a profil tulajdonságait
 zowe config set "profiles.zosmf.properties.host" "204.90.115.200"
@@ -30,8 +29,8 @@ else
   echo "A mappa már létezik."
 fi
 
-echo "Fájlok feltöltése..."
-zowe zos-files upload dir-to-uss "./cobol-check" "/z/$LOWERCASE_USERNAME/cobolcheck" --recursive --binary-files "cobol-check-0.2.9.jar"
+echo "Fájlok feltöltése bináris módban a JAR fájlokra..."
+zowe zos-files upload dir-to-uss "./cobol-check" "/z/$LOWERCASE_USERNAME/cobolcheck" --recursive --binary-files "*.jar"
 
 echo "Feltöltés ellenőrzése:"
 zowe zos-files list uss-files "/z/$LOWERCASE_USERNAME/cobolcheck"
